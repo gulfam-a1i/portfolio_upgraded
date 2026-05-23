@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import {
   Menu, X, ArrowUpRight, Github, Linkedin, Send, Mail, Phone, MapPin,
   Layout, Server, Smartphone, Award, Briefcase, User, Instagram,
-  Facebook, ChevronRight, Trash2, Edit3, Plus, LogOut, Eye, ExternalLink
+  Facebook, ChevronRight, Trash2, Edit3, Plus, LogOut, Eye, ExternalLink, Star
 } from 'lucide-react';
 import { db, auth, loginWithGoogle, logout } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -17,10 +17,14 @@ import {
 export interface Profile {
   name: string; objective: string; email: string; phone: string;
   location: string; linkedin: string; github: string; facebook: string; instagram: string;
+  fiverr?: string; upwork?: string;
   heroTitle1: string; heroTitle2: string; heroSubtitle: string; profileImageUrl: string;
   adminEmail: string;
 }
 export interface Skill { id?: string; category: string; items: string; }
+export interface Service {
+  id?: string; icon: string; num: string; title: string; desc: string; tags: string[]; order: number;
+}
 export interface Project {
   id?: string; title: string; description: string; techStack: string;
   link: string; order: number; imageUrl?: string;
@@ -37,6 +41,9 @@ export interface Workstation {
 export interface Inquiry {
   id?: string; name: string; email: string; message: string; createdAt: any;
 }
+export interface Testimonial {
+  id?: string; name: string; role: string; text: string; order?: number;
+}
 
 // ─── Defaults ──────────────────────────────────────────────────────
 const DEFAULT_PROFILE: Profile = {
@@ -44,6 +51,8 @@ const DEFAULT_PROFILE: Profile = {
   email: "gulfamoffi62@gmail.com", phone: "+92 3280130155", location: "Vehari, Pakistan",
   linkedin: "https://linkedin.com/in/gulfamali", github: "https://github.com/gulfamali16",
   facebook: "#", instagram: "#",
+  fiverr: "https://www.fiverr.com/gulfama1i?public_mode=true",
+  upwork: "https://www.upwork.com/freelancers/~01d6f91061b549d072",
   heroTitle1: "UI UX", heroTitle2: "DESIGNER",
   heroSubtitle: "I DESIGN INTUITIVE INTERFACES AND DEVELOP USER-CENTRIC SOLUTIONS, BLENDING CREATIVITY AND TECHNICAL EXPERTISE TO CRAFT SEAMLESS DIGITAL EXPERIENCES",
   profileImageUrl: "/profile.png", adminEmail: "gulfamoffi62@gmail.com"
@@ -69,6 +78,18 @@ const DEFAULT_SKILLS: Skill[] = [
   { category: "Tools & Platforms", items: "Git, GitHub, Jira, VS Code, Android Studio, After Effects, Windows" },
 ];
 
+const DEFAULT_SERVICES: Service[] = [
+  { icon: "server", num: "01", title: "Full Stack Development", desc: "Complete product development across frontend, backend, database, APIs, dashboards, and deployment workflows.", tags: ["React", "Node.js", "Firebase", "Supabase"], order: 1 },
+  { icon: "smartphone", num: "02", title: "Flutter App Development", desc: "Cross-platform mobile apps with clean UI, smooth performance, Firebase integrations, and scalable app architecture.", tags: ["Flutter", "Dart", "Android", "Firebase"], order: 2 },
+  { icon: "layout", num: "03", title: "React Web Development", desc: "Modern responsive web apps, admin dashboards, landing experiences, and frontend systems built with React.", tags: ["React", "Vite", "Tailwind", "UI Systems"], order: 3 },
+  { icon: "award", num: "04", title: "AI Integrations", desc: "Practical AI features added into real products, including chat, summaries, transcription, recommendations, and content tools.", tags: ["OpenAI", "Gemini", "Groq", "LLMs"], order: 4 },
+  { icon: "layout", num: "05", title: "AI Automation Systems", desc: "Automation workflows that connect apps, data, APIs, and AI models to reduce repetitive manual work.", tags: ["Automation", "Workflows", "APIs", "AI Tools"], order: 5 },
+  { icon: "briefcase", num: "06", title: "AI Agents", desc: "Goal-driven AI assistants that can reason over user input, call tools, process data, and complete multi-step tasks.", tags: ["Agents", "Tools", "RAG", "Assistants"], order: 6 },
+  { icon: "award", num: "07", title: "Voice AI Agents", desc: "Voice-based AI agents for calls, support, lead qualification, reminders, and interactive conversational workflows.", tags: ["Voice AI", "Calls", "Transcription", "Realtime"], order: 7 },
+  { icon: "server", num: "08", title: "REST APIs Development", desc: "Reliable API layers with clean routes, authentication, validation, database access, and third-party integrations.", tags: ["Express", "Node.js", "Auth", "Databases"], order: 8 },
+  { icon: "server", num: "09", title: "Backend Development", desc: "Backend systems for apps and dashboards, including data modeling, business logic, security, and deployment.", tags: ["Node.js", "Firebase", "PostgreSQL", "MongoDB"], order: 9 },
+];
+
 const STATS = [
   { label: 'YEARS EXP', value: '02+' },
   { label: 'PROJECTS', value: '15+' },
@@ -76,7 +97,7 @@ const STATS = [
   { label: 'RATING', value: '4.8' },
 ];
 
-const TESTIMONIALS = [
+const DEFAULT_TESTIMONIALS: Testimonial[] = [
   { name: 'EMILY CARTER', role: 'PRODUCT MANAGER · TECHNOVA', text: 'Gulfam transformed our app with exceptional Flutter skills. The user feedback has been phenomenal and engagement rose 40% in the first month.' },
   { name: 'SOPHIA LEE', role: 'MARKETING LEAD · GREENSPACES', text: 'Attention to detail and user-centric approach resulted in a beautiful platform that our customers absolutely love.' },
   { name: 'MICHAEL GRANT', role: 'OPERATIONS MANAGER · BRIGHT', text: 'A rare talent who excels at both UI design and full-stack development. Delivered every project on time with zero compromises.' },
@@ -84,6 +105,16 @@ const TESTIMONIALS = [
 
 // ─── Navbar ────────────────────────────────────────────────────────
 const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
+
+const serviceIcons: Record<string, JSX.Element> = {
+  layout: <Layout size={28} />,
+  server: <Server size={28} />,
+  smartphone: <Smartphone size={28} />,
+  award: <Award size={28} />,
+  briefcase: <Briefcase size={28} />,
+};
+
+const getServiceIcon = (icon: string) => serviceIcons[icon] || serviceIcons.layout;
 
 const SectionHeader = ({ eyebrow, title, body, dark = false }: { eyebrow: string; title: string; body?: string; dark?: boolean }) => (
   <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12 md:mb-16">
@@ -102,7 +133,7 @@ const SectionHeader = ({ eyebrow, title, body, dark = false }: { eyebrow: string
   </div>
 );
 
-const Navbar = ({ profile }: { profile: Profile }) => {
+const Navbar = ({ profile, activeSection }: { profile: Profile; activeSection: string }) => {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -125,7 +156,7 @@ const Navbar = ({ profile }: { profile: Profile }) => {
         <div className="hidden md:flex gap-1 items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
           {links.map((item, i) => (
             <a key={item.label} href={item.href}
-              className={cn("px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.16em] transition-all", i === 0 ? "bg-accent text-primary" : "text-white/58 hover:text-white hover:bg-white/[0.06]")}>
+              className={cn("px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.16em] transition-all", activeSection === item.href.slice(1) ? "bg-accent text-primary" : "text-white/58 hover:text-white hover:bg-white/[0.06]")}>
               {item.label}
             </a>
           ))}
@@ -213,16 +244,15 @@ const Home = () => {
   const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS);
   const [experience, setExperience] = useState<Experience[]>(DEFAULT_EXPERIENCE);
   const [skills, setSkills] = useState<Skill[]>(DEFAULT_SKILLS);
+  const [services, setServices] = useState<Service[]>(DEFAULT_SERVICES);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(DEFAULT_TESTIMONIALS);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('home');
+  const [activeService, setActiveService] = useState(0);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const imgY = useTransform(scrollYProgress, [0, 1], [0, 80]);
-
-  const services = [
-    { icon: <Layout size={28} />, num: '01', title: 'UI/UX Design', desc: 'Interface systems, wireframes, prototypes, and conversion-focused product flows.', tags: ['Product UI', 'Design systems', 'Prototypes'] },
-    { icon: <Smartphone size={28} />, num: '02', title: 'App Development', desc: 'Fast cross-platform mobile experiences with clean architecture and reliable Firebase integrations.', tags: ['Flutter', 'Android', 'Firebase'] },
-    { icon: <Server size={28} />, num: '03', title: 'Full Stack Development', desc: 'Modern web apps, REST APIs, dashboards, and backend systems built for real-world use.', tags: ['React', 'Node.js', 'APIs'] },
-  ];
 
   useEffect(() => {
     getDoc(doc(db, 'profile', 'current')).then(snap => {
@@ -239,8 +269,35 @@ const Home = () => {
     const unsubS = onSnapshot(collection(db, 'skills'), s => {
       if (!s.empty) setSkills(s.docs.map(d => ({ id: d.id, ...d.data() } as Skill)));
     });
-    return () => { unsubP(); unsubE(); unsubS(); };
+    const unsubServices = onSnapshot(query(collection(db, 'services'), orderBy('order')), s => {
+      if (!s.empty) setServices(s.docs.map(d => ({ id: d.id, ...d.data() } as Service)));
+    });
+    const unsubTestimonials = onSnapshot(query(collection(db, 'testimonials'), orderBy('order')), s => {
+      if (!s.empty) setTestimonials(s.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial)));
+    });
+    return () => { unsubP(); unsubE(); unsubS(); unsubServices(); unsubTestimonials(); };
   }, []);
+
+  useEffect(() => {
+    const ids = ['home', 'services', 'works', 'contact'];
+    const onScroll = () => {
+      const current = [...ids].reverse().find(id => {
+        const el = document.getElementById(id);
+        return el ? el.getBoundingClientRect().top <= 140 : false;
+      });
+      if (current) setActiveSection(current);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveService(current => services.length ? (current + 1) % services.length : 0);
+    }, 2600);
+    return () => window.clearInterval(timer);
+  }, [services.length]);
 
   if (loading) return (
     <div className="h-screen bg-primary flex items-center justify-center site-grid">
@@ -261,7 +318,7 @@ const Home = () => {
 
   return (
     <div className="bg-primary text-white">
-      <Navbar profile={profile} />
+      <Navbar profile={profile} activeSection={activeSection} />
 
       <section ref={heroRef} id="home" className="relative min-h-screen overflow-hidden site-grid pt-28 md:pt-36 pb-20">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_20%,rgba(183,255,42,0.12),transparent_30%),linear-gradient(180deg,rgba(6,6,6,0.2),#060606_88%)]" />
@@ -275,18 +332,19 @@ const Home = () => {
                 </div>
               </motion.div>
               <motion.h1 initial={{ opacity: 0, y: 34 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display font-bold text-white leading-[0.9] max-w-5xl"
-                style={{ fontSize: 'clamp(54px, 9.5vw, 136px)' }}>
+                className="font-display font-bold text-white leading-[0.84] max-w-6xl tracking-normal"
+                style={{ fontSize: 'clamp(58px, 10.6vw, 158px)' }}>
                 Full Stack<br /><span className="text-accent">Developer</span>
               </motion.h1>
               <motion.h2 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.15 }}
-                className="font-display font-bold uppercase text-white/[0.085] leading-none mt-4"
-                style={{ fontSize: 'clamp(42px, 7vw, 104px)', WebkitTextStroke: '1px rgba(255,255,255,0.16)' }}>
-                Software Engineer
+                className="font-display font-bold uppercase text-transparent leading-[0.88] mt-7 select-none"
+                style={{ fontSize: 'clamp(38px, 6.6vw, 96px)', WebkitTextStroke: '1px rgba(255,255,255,0.18)' }}>
+                <span className="block whitespace-nowrap">AI Automation</span>
+                <span className="block">Engineer</span>
               </motion.h2>
               <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
                 className="mt-8 max-w-2xl border-l-2 border-accent pl-6 text-white/66 text-base md:text-lg leading-relaxed">
-                Building modern web apps, mobile apps, and AI-powered digital products with technical precision and premium aesthetics.
+                Full stack developer building scalable web, mobile, and AI-powered systems including automation tools, AI assistants, and voice/call agents.
               </motion.p>
               <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
                 className="mt-10 flex flex-wrap gap-4">
@@ -301,12 +359,14 @@ const Home = () => {
 
             <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.25 }}
               className="lg:col-span-4">
-              <div className="float-panel border border-white/12 bg-[#101010]/82 backdrop-blur p-5 md:p-6">
-                <div className="aspect-[4/5] bg-[linear-gradient(180deg,#171717,#060606)] border border-white/10 overflow-hidden relative">
+              <div className="float-panel relative border border-white/12 bg-[#101010]/82 backdrop-blur p-4 md:p-5">
+                <div className="absolute -top-4 -left-4 bg-accent text-primary px-4 py-2 text-[10px] font-bold tracking-[0.16em] uppercase z-20">AI + Full Stack</div>
+                <div className="absolute -right-3 top-16 border border-white/12 bg-primary/90 px-4 py-2 text-white/70 text-[10px] font-bold tracking-[0.16em] uppercase z-20">Available</div>
+                <div className="aspect-[4/5] bg-[radial-gradient(circle_at_50%_20%,rgba(183,255,42,0.18),transparent_34%),linear-gradient(180deg,#171717,#060606)] border border-white/10 overflow-hidden relative">
                   <motion.img style={{ y: imgY }} src={profile.profileImageUrl || '/profile.png'} alt={profile.name}
-                    className="w-full h-full object-contain object-bottom scale-110 saturate-125 contrast-105 opacity-100"
+                    className="w-full h-full object-contain object-bottom scale-105 saturate-125 contrast-105 opacity-100 drop-shadow-[0_28px_55px_rgba(0,0,0,0.65)]"
                     onError={e => { (e.target as HTMLImageElement).src = '/profile.png'; }} />
-                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-primary to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
                 </div>
                 <div className="grid grid-cols-3 gap-px bg-white/10 mt-5">
                   {STATS.slice(0, 3).map(s => (
@@ -317,15 +377,17 @@ const Home = () => {
                   ))}
                 </div>
               </div>
-              <div className="mt-5 flex gap-3">
+              <div className="mt-5 flex justify-center gap-3">
                 {[
                   { icon: <Github size={15} />, href: profile.github },
                   { icon: <Linkedin size={15} />, href: profile.linkedin },
                   { icon: <Facebook size={15} />, href: profile.facebook },
                   { icon: <Instagram size={15} />, href: profile.instagram },
+                  { icon: <span className="text-[10px] font-bold">Fi</span>, href: profile.fiverr || DEFAULT_PROFILE.fiverr },
+                  { icon: <span className="text-[10px] font-bold">Up</span>, href: profile.upwork || DEFAULT_PROFILE.upwork },
                 ].map((s, i) => (
                   <a key={i} href={s.href} target="_blank" rel="noopener noreferrer"
-                    className="w-11 h-11 border border-white/12 bg-white/[0.025] flex items-center justify-center text-white/58 hover:bg-accent hover:text-primary hover:border-accent transition-all">
+                    className="w-11 h-11 border border-white/12 bg-white/[0.025] flex items-center justify-center text-accent/75 hover:bg-accent hover:text-primary hover:border-accent transition-all">
                     {s.icon}
                   </a>
                 ))}
@@ -344,24 +406,61 @@ const Home = () => {
 
       <section id="services" className="py-24 md:py-32 bg-surface text-on-surface light-grid">
         <div className="max-w-[1440px] mx-auto px-5 md:px-10 xl:px-20">
-          <SectionHeader eyebrow="What I build" title="Services" body="Turning ideas into high-performance digital products with clean code, thoughtful UX, and reliable delivery." />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <SectionHeader eyebrow="What I build" title="Services" body="From UI design to full-stack development, I create fast, functional, and user-focused applications for web and mobile platforms." />
+          <div className="relative overflow-hidden border-y border-primary/10 mb-8 py-4">
+            <motion.div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-accent/35 to-transparent"
+              animate={{ x: ['-120%', '360%'] }}
+              transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }} />
+            <motion.div className="relative flex items-center gap-10 whitespace-nowrap w-max"
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{ duration: 34, repeat: Infinity, ease: 'linear' }}>
+              {[...services, ...services].map((s, i) => (
+                <button key={`${s.id || s.num}-${i}`} type="button" onClick={() => setActiveService(i % services.length)}
+                  className={cn("inline-flex items-center gap-3 text-sm md:text-base font-display font-bold tracking-[0.08em] uppercase transition-colors", activeService === (i % services.length) ? "text-primary" : "text-primary/45 hover:text-primary")}>
+                  <span className="w-2 h-2 bg-accent rounded-full shadow-[0_0_18px_rgba(183,255,42,0.8)]" />
+                  <span>{s.title}</span>
+                </button>
+              ))}
+            </motion.div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
             {services.map((s, i) => (
-              <motion.div key={s.num} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }} viewport={{ once: true }}
-                className="bg-white/70 backdrop-blur border border-primary/10 p-7 md:p-9 group hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 cursor-default">
+              <motion.div key={s.id || s.num}
+                onMouseEnter={() => setActiveService(i)}
+                initial={{ y: 34, rotateX: 8 }}
+                whileInView={{ y: 0, rotateX: 0 }}
+                animate={{
+                  y: activeService === i ? -14 : 0,
+                  scale: activeService === i ? 1.025 : 1,
+                  rotate: activeService === i ? -0.4 : 0,
+                }}
+                whileHover={{ y: -18, rotate: -0.8 }}
+                transition={{ type: "spring", stiffness: 220, damping: 24, delay: i * 0.04 }}
+                viewport={{ once: true }}
+                className={cn(
+                  "relative overflow-hidden bg-white/78 backdrop-blur border p-7 md:p-9 group cursor-default min-h-[360px] transition-colors duration-300",
+                  activeService === i ? "border-accent bg-[#070707] text-accent shadow-[0_28px_80px_rgba(6,6,6,0.28)]" : "border-primary/10 bg-white/78 text-on-surface hover:border-primary/30"
+                )}>
+                <motion.div className="absolute inset-x-0 top-0 h-1 bg-accent origin-left"
+                  animate={{ scaleX: activeService === i ? 1 : 0.18 }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} />
+                <motion.div className="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-accent/18 blur-2xl"
+                  animate={{ scale: activeService === i ? 1.2 : 0.65, x: activeService === i ? 0 : 20, y: activeService === i ? 0 : -10 }}
+                  transition={{ duration: 0.6 }} />
                 <div className="flex justify-between items-start mb-8">
-                  <span className="text-primary/18 font-display font-bold text-5xl group-hover:text-white/10 transition-colors">{s.num}</span>
-                  <div className="w-12 h-12 border border-primary/10 group-hover:border-white/10 flex items-center justify-center text-primary group-hover:text-accent transition-colors">{s.icon}</div>
+                  <span className={cn("font-display font-bold text-5xl transition-colors", activeService === i ? "text-accent/25" : "text-primary/18")}>{s.num}</span>
+                  <motion.div animate={{ rotate: activeService === i ? [0, -10, 0] : 0, scale: activeService === i ? 1.08 : 1 }}
+                    transition={{ duration: 0.6 }}
+                    className={cn("w-12 h-12 border flex items-center justify-center transition-colors", activeService === i ? "border-accent/35 bg-accent/10 text-accent" : "border-primary/10 text-primary")}>{getServiceIcon(s.icon)}</motion.div>
                 </div>
-                <h3 className="font-display font-bold text-2xl mb-4 tracking-tight">{s.title}</h3>
-                <p className="text-on-surface-variant group-hover:text-white/62 text-sm leading-relaxed transition-colors">{s.desc}</p>
+                <h3 className={cn("font-display font-bold text-2xl mb-4 tracking-tight transition-colors", activeService === i ? "text-accent" : "text-on-surface")}>{s.title}</h3>
+                <p className={cn("text-sm leading-relaxed transition-colors", activeService === i ? "text-white/68" : "text-on-surface-variant")}>{s.desc}</p>
                 <div className="flex flex-wrap gap-2 mt-7">
-                  {s.tags.map(tag => (
-                    <span key={tag} className="border border-primary/10 group-hover:border-white/12 px-3 py-1 text-[10px] font-bold tracking-[0.12em] uppercase text-on-surface-variant group-hover:text-white/60 transition-colors">{tag}</span>
+                  {(Array.isArray(s.tags) ? s.tags : []).map(tag => (
+                    <span key={tag} className={cn("border px-3 py-1 text-[10px] font-bold tracking-[0.12em] uppercase transition-colors", activeService === i ? "border-accent/25 bg-accent/5 text-accent/80" : "border-primary/10 text-on-surface-variant")}>{tag}</span>
                   ))}
                 </div>
-                <div className="mt-8 flex items-center gap-2 text-primary group-hover:text-accent text-xs font-bold tracking-[0.14em] transition-colors">
+                <div className={cn("mt-8 flex items-center gap-2 text-xs font-bold tracking-[0.14em] transition-colors", activeService === i ? "text-accent" : "text-primary")}>
                   EXPLORE <ChevronRight size={14} />
                 </div>
               </motion.div>
@@ -381,13 +480,13 @@ const Home = () => {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {projects.map((p, i) => (
-              <motion.a key={p.id || i} href={p.link} target="_blank" rel="noopener noreferrer"
+              <motion.button key={p.id || i} type="button" onClick={() => setSelectedProject(p)}
                 initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} viewport={{ once: true }}
-                className="bg-[#101010] border border-white/10 group relative overflow-hidden block hover:border-accent/70 transition-all">
+                className="text-left bg-[#101010] border border-white/10 group relative overflow-hidden block hover:border-accent/70 transition-all">
                 <div className="relative h-64 md:h-80 overflow-hidden bg-white/[0.035]">
                   {p.imageUrl ? (
                     <img src={p.imageUrl} alt={p.title}
-                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-72 group-hover:opacity-100" />
+                      className="w-full h-full object-contain group-hover:scale-[1.03] transition-all duration-700 opacity-100" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center site-grid">
                       <div className="w-[72%] h-[62%] border border-white/12 bg-primary/70 p-6 flex flex-col justify-between group-hover:border-accent/50 transition-colors">
@@ -396,7 +495,7 @@ const Home = () => {
                       </div>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/12 to-transparent pointer-events-none" />
                   <div className="absolute top-4 right-4 w-10 h-10 bg-accent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
                     <ExternalLink size={14} className="text-primary" />
                   </div>
@@ -409,13 +508,56 @@ const Home = () => {
                   </div>
                   <h3 className="font-display font-bold text-white text-2xl md:text-3xl tracking-tight mb-3 group-hover:text-accent transition-colors">{p.title}</h3>
                   <p className="text-white/54 text-sm leading-relaxed mb-6">{p.description}</p>
-                  <div className="text-accent text-xs font-bold tracking-[0.14em] flex items-center gap-2">VIEW PROJECT <ArrowUpRight size={14} /></div>
+                  <div className="text-accent text-xs font-bold tracking-[0.14em] flex items-center gap-2">VIEW DETAILS <ArrowUpRight size={14} /></div>
                 </div>
-              </motion.a>
+              </motion.button>
             ))}
           </div>
         </div>
       </section>
+
+      <AnimatePresence>
+        {selectedProject && (
+          <motion.div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSelectedProject(null)}>
+            <motion.div initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-[#101010] border border-white/12 w-full max-w-5xl max-h-[92vh] overflow-y-auto">
+              <div className="flex justify-between items-center gap-4 p-5 border-b border-white/10 sticky top-0 bg-[#101010] z-10">
+                <h3 className="font-display font-bold text-white text-2xl">{selectedProject.title}</h3>
+                <button onClick={() => setSelectedProject(null)} className="w-10 h-10 border border-white/12 flex items-center justify-center text-white/60 hover:text-primary hover:bg-accent hover:border-accent transition-all">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                <div className="bg-primary p-5">
+                  {selectedProject.imageUrl ? (
+                    <img src={selectedProject.imageUrl} alt={selectedProject.title}
+                      className="w-full max-h-[70vh] object-contain bg-white/[0.03]" />
+                  ) : (
+                    <div className="h-80 site-grid border border-white/10 flex items-center justify-center">
+                      <span className="font-display font-bold text-7xl text-white/12">{selectedProject.title[0]}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-6 md:p-8 flex flex-col">
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {selectedProject.techStack.split(',').map(tag => (
+                      <span key={tag} className="border border-white/10 text-white/50 text-[10px] font-bold tracking-[0.12em] uppercase px-2.5 py-1">{tag.trim()}</span>
+                    ))}
+                  </div>
+                  <p className="text-white/64 text-sm leading-relaxed mb-8">{selectedProject.description}</p>
+                  <a href={selectedProject.link} target="_blank" rel="noopener noreferrer"
+                    className="mt-auto bg-accent text-primary font-display font-bold text-xs tracking-[0.14em] px-6 py-4 hover:bg-accent2 transition-all inline-flex items-center justify-center gap-2">
+                    OPEN PROJECT LINK <ExternalLink size={14} />
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <section className="py-24 md:py-32 bg-surface text-on-surface light-grid">
         <div className="max-w-[1440px] mx-auto px-5 md:px-10 xl:px-20">
@@ -469,24 +611,50 @@ const Home = () => {
       <section id="testimonials" className="py-24 md:py-32 bg-primary site-grid">
         <div className="max-w-[1440px] mx-auto px-5 md:px-10 xl:px-20">
           <SectionHeader dark eyebrow="Client feedback" title="Testimonials" body="A few notes on collaboration, craft, and delivery from product and operations teams." />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {TESTIMONIALS.map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }} viewport={{ once: true }}
-                className="bg-[#101010]/90 border border-white/10 p-8 md:p-9 group hover:border-accent/60 transition-colors">
-                <div className="text-accent text-5xl font-display font-bold mb-6 opacity-65">&quot;</div>
-                <p className="text-white/68 text-sm leading-relaxed mb-8">{t.text}</p>
-                <div className="flex items-center gap-4 border-t border-white/10 pt-6">
-                  <div className="w-10 h-10 bg-accent flex items-center justify-center font-display font-bold text-primary text-lg">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <div className="text-white font-bold text-sm tracking-tight">{t.name}</div>
-                    <div className="text-white/40 text-[10px] font-bold tracking-widest">{t.role}</div>
-                  </div>
-                </div>
-              </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 mb-10">
+            {[
+              ['4.9/5', 'AVERAGE RATING'],
+              ['15+', 'PROJECTS SHIPPED'],
+              ['100%', 'CLIENT FOCUS'],
+              ['FAST', 'RESPONSE TIME'],
+            ].map(([value, label]) => (
+              <div key={label} className="bg-[#101010] px-5 py-5">
+                <div className="font-display font-bold text-white text-2xl">{value}</div>
+                <div className="text-accent/70 text-[9px] font-bold tracking-[0.16em] uppercase mt-1">{label}</div>
+              </div>
             ))}
+          </div>
+          <div className="relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-primary to-transparent z-10" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-primary to-transparent z-10" />
+            <motion.div className="flex gap-4 w-max"
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}>
+              {[...testimonials, ...testimonials].map((t, i) => (
+                <motion.div key={`${t.id || t.name}-${i}`}
+                  whileHover={{ y: -10, scale: 1.02 }}
+                  className="w-[320px] md:w-[410px] bg-[#101010]/92 border border-white/10 p-7 md:p-8 group hover:border-accent/70 transition-colors shrink-0">
+                  <div className="flex items-center justify-between gap-4 mb-7">
+                    <div className="flex gap-1 text-accent">
+                      {[0, 1, 2, 3, 4].map(star => (
+                        <Star key={star} size={14} fill="currentColor" />
+                      ))}
+                    </div>
+                    <div className="text-white/22 text-5xl font-display font-bold leading-none">&quot;</div>
+                  </div>
+                  <p className="text-white/68 text-sm leading-relaxed mb-8 min-h-[88px]">{t.text}</p>
+                  <div className="flex items-center gap-4 border-t border-white/10 pt-6">
+                    <div className="w-11 h-11 bg-accent flex items-center justify-center font-display font-bold text-primary text-lg">
+                      {t.name[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-white font-bold text-sm tracking-tight truncate">{t.name}</div>
+                      <div className="text-white/40 text-[10px] font-bold tracking-widest truncate">{t.role}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </div>
       </section>
@@ -535,13 +703,17 @@ const Home = () => {
             {profile.name.toLowerCase().replace(' ', '')}<span className="text-accent">.dev</span>
           </span>
           <span className="text-white/26 text-xs font-bold tracking-[0.2em]">2026 - ALL RIGHTS RESERVED</span>
-          <div className="flex gap-4">
+          <div className="flex items-center justify-center gap-4">
             {[
               { icon: <Github size={14} />, href: profile.github },
               { icon: <Linkedin size={14} />, href: profile.linkedin },
+              { icon: <Facebook size={14} />, href: profile.facebook },
+              { icon: <Instagram size={14} />, href: profile.instagram },
+              { icon: <span className="text-[10px] font-bold">Fi</span>, href: profile.fiverr || DEFAULT_PROFILE.fiverr },
+              { icon: <span className="text-[10px] font-bold">Up</span>, href: profile.upwork || DEFAULT_PROFILE.upwork },
             ].map((s, i) => (
               <a key={i} href={s.href} target="_blank" rel="noopener noreferrer"
-                className="text-white/35 hover:text-accent transition-colors">{s.icon}</a>
+                className="w-8 h-8 flex items-center justify-center text-accent/75 hover:text-accent2 transition-colors">{s.icon}</a>
             ))}
           </div>
         </div>
@@ -579,16 +751,18 @@ const Modal = ({ open, onClose, title, children }: any) => {
   );
 };
 
-type AdminTab = 'inquiries' | 'profile' | 'projects' | 'experience' | 'skills';
+type AdminTab = 'inquiries' | 'profile' | 'projects' | 'services' | 'testimonials' | 'experience' | 'skills';
 
 const Admin = () => {
   const [user, setUser] = useState(auth.currentUser);
   const [tab, setTab] = useState<AdminTab>('inquiries');
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [profileData, setProfileData] = useState<Profile>(DEFAULT_PROFILE);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [experience, setExperience] = useState<Experience[]>([]);
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS);
+  const [services, setServices] = useState<Service[]>(DEFAULT_SERVICES);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(DEFAULT_TESTIMONIALS);
+  const [experience, setExperience] = useState<Experience[]>(DEFAULT_EXPERIENCE);
+  const [skills, setSkills] = useState<Skill[]>(DEFAULT_SKILLS);
   const [modal, setModal] = useState<{ open: boolean; title: string; content: any }>({ open: false, title: '', content: null });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
@@ -609,12 +783,16 @@ const Admin = () => {
     const u1 = onSnapshot(query(collection(db, 'inquiries'), orderBy('createdAt', 'desc')), s =>
       setInquiries(s.docs.map(d => ({ id: d.id, ...d.data() } as Inquiry))));
     const u2 = onSnapshot(query(collection(db, 'projects'), orderBy('order')), s =>
-      setProjects(s.docs.map(d => ({ id: d.id, ...d.data() } as Project))));
+      setProjects(s.empty ? DEFAULT_PROJECTS : s.docs.map(d => ({ id: d.id, ...d.data() } as Project))));
     const u3 = onSnapshot(query(collection(db, 'experience'), orderBy('order')), s =>
-      setExperience(s.docs.map(d => ({ id: d.id, ...d.data() } as Experience))));
+      setExperience(s.empty ? DEFAULT_EXPERIENCE : s.docs.map(d => ({ id: d.id, ...d.data() } as Experience))));
     const u4 = onSnapshot(collection(db, 'skills'), s =>
-      setSkills(s.docs.map(d => ({ id: d.id, ...d.data() } as Skill))));
-    return () => { u1(); u2(); u3(); u4(); };
+      setSkills(s.empty ? DEFAULT_SKILLS : s.docs.map(d => ({ id: d.id, ...d.data() } as Skill))));
+    const u5 = onSnapshot(query(collection(db, 'services'), orderBy('order')), s =>
+      setServices(s.empty ? DEFAULT_SERVICES : s.docs.map(d => ({ id: d.id, ...d.data() } as Service))));
+    const u6 = onSnapshot(query(collection(db, 'testimonials'), orderBy('order')), s =>
+      setTestimonials(s.empty ? DEFAULT_TESTIMONIALS : s.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial))));
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); };
   }, [isAdmin]);
 
   const save = async (col: string, data: any) => {
@@ -625,7 +803,10 @@ const Admin = () => {
       else await addDoc(collection(db, col), rest);
       setModal({ open: false, title: '', content: null });
       showToast('Saved successfully!');
-    } catch (e) { console.error(e); showToast('Error saving.'); }
+    } catch (e: any) {
+      console.error(e);
+      showToast(e?.code === 'permission-denied' ? 'Permission denied. Deploy Firestore rules.' : (e?.message || 'Error saving.'));
+    }
     setSaving(false);
   };
 
@@ -677,6 +858,8 @@ const Admin = () => {
   const tabs: { id: AdminTab; label: string }[] = [
     { id: 'inquiries', label: 'INBOX' },
     { id: 'projects', label: 'PROJECTS' },
+    { id: 'services', label: 'SERVICES' },
+    { id: 'testimonials', label: 'REVIEWS' },
     { id: 'experience', label: 'EXPERIENCE' },
     { id: 'skills', label: 'SKILLS' },
     { id: 'profile', label: 'PROFILE' },
@@ -707,6 +890,51 @@ const Admin = () => {
         <button onClick={() => onSave(d)} disabled={saving}
           className="w-full bg-primary text-white font-bold py-4 text-sm tracking-[0.1em] hover:bg-accent hover:text-primary transition-all disabled:opacity-60">
           {saving ? 'SAVING...' : 'SAVE PROJECT'}
+        </button>
+      </div>
+    );
+  };
+
+  const ServiceForm = ({ initial, onSave }: any) => {
+    const [d, setD] = useState({
+      ...initial,
+      tagsText: Array.isArray(initial.tags) ? initial.tags.join(', ') : (initial.tags || ''),
+    });
+    const saveService = () => {
+      const { tagsText, ...rest } = d;
+      onSave({
+        ...rest,
+        tags: String(tagsText || '').split(',').map(tag => tag.trim()).filter(Boolean),
+        order: Number(d.order || 1),
+      });
+    };
+    return (
+      <div className="space-y-4">
+        <FieldInput label="Number" value={d.num} onChange={(v: string) => setD({ ...d, num: v })} />
+        <FieldInput label="Title" value={d.title} onChange={(v: string) => setD({ ...d, title: v })} />
+        <FieldInput label="Description" value={d.desc} onChange={(v: string) => setD({ ...d, desc: v })} type="textarea" />
+        <FieldInput label="Icon (layout, server, smartphone, award, briefcase)" value={d.icon} onChange={(v: string) => setD({ ...d, icon: v })} />
+        <FieldInput label="Tags (comma separated)" value={d.tagsText} onChange={(v: string) => setD({ ...d, tagsText: v })} type="textarea" />
+        <FieldInput label="Order" value={String(d.order || '')} onChange={(v: string) => setD({ ...d, order: Number(v) })} type="number" />
+        <button onClick={saveService} disabled={saving}
+          className="w-full bg-primary text-white font-bold py-4 text-sm tracking-[0.1em] hover:bg-accent hover:text-primary transition-all disabled:opacity-60">
+          {saving ? 'SAVING...' : 'SAVE SERVICE'}
+        </button>
+      </div>
+    );
+  };
+
+  const TestimonialForm = ({ initial, onSave }: any) => {
+    const [d, setD] = useState(initial);
+    return (
+      <div className="space-y-4">
+        <FieldInput label="Name" value={d.name} onChange={(v: string) => setD({ ...d, name: v })} />
+        <FieldInput label="Role / Company" value={d.role} onChange={(v: string) => setD({ ...d, role: v })} />
+        <FieldInput label="Review Text" value={d.text} onChange={(v: string) => setD({ ...d, text: v })} type="textarea" />
+        <FieldInput label="Order" value={String(d.order || '')} onChange={(v: string) => setD({ ...d, order: Number(v) })} type="number" />
+        <button onClick={() => onSave({ ...d, order: Number(d.order || 1) })} disabled={saving}
+          className="w-full bg-primary text-white font-bold py-4 text-sm tracking-[0.1em] hover:bg-accent hover:text-primary transition-all disabled:opacity-60">
+          {saving ? 'SAVING...' : 'SAVE REVIEW'}
         </button>
       </div>
     );
@@ -848,6 +1076,70 @@ const Admin = () => {
           )}
 
           {/* ── EXPERIENCE ── */}
+          {/* SERVICES */}
+          {tab === 'services' && (
+            <div>
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="font-display font-bold text-4xl tracking-tight">SERVICES</h1>
+                <button onClick={() => setModal({ open: true, title: 'ADD SERVICE', content: <ServiceForm initial={{ icon: 'layout', num: String(services.length + 1).padStart(2, '0'), title: '', desc: '', tags: [], order: services.length + 1 }} onSave={(d: any) => save('services', d)} /> })}
+                  className="flex items-center gap-2 bg-primary text-white font-bold text-xs px-5 py-3 tracking-[0.1em] hover:bg-accent hover:text-primary transition-all">
+                  <Plus size={14} /> ADD SERVICE
+                </button>
+              </div>
+              <div className="space-y-3 max-w-3xl">
+                {services.map(s => (
+                  <div key={s.id} className="bg-white border border-surface-dim p-5 flex items-start gap-4 group hover:border-primary transition-colors">
+                    <div className="w-12 h-12 bg-surface border border-surface-dim flex items-center justify-center text-primary shrink-0">
+                      {getServiceIcon(s.icon)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-display font-bold text-lg tracking-tight">{s.num} - {s.title}</h4>
+                      <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">{s.desc}</p>
+                    </div>
+                    <div className="flex gap-3 shrink-0">
+                      <button onClick={() => setModal({ open: true, title: 'EDIT SERVICE', content: <ServiceForm initial={s} onSave={(d: any) => save('services', { ...d, id: s.id })} /> })}
+                        className="text-on-surface-variant hover:text-primary transition-colors"><Edit3 size={16} /></button>
+                      <button onClick={() => s.id && del('services', s.id)}
+                        className="text-on-surface-variant hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* REVIEWS */}
+          {tab === 'testimonials' && (
+            <div>
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="font-display font-bold text-4xl tracking-tight">REVIEWS</h1>
+                <button onClick={() => setModal({ open: true, title: 'ADD REVIEW', content: <TestimonialForm initial={{ name: '', role: '', text: '', order: testimonials.length + 1 }} onSave={(d: any) => save('testimonials', d)} /> })}
+                  className="flex items-center gap-2 bg-primary text-white font-bold text-xs px-5 py-3 tracking-[0.1em] hover:bg-accent hover:text-primary transition-all">
+                  <Plus size={14} /> ADD REVIEW
+                </button>
+              </div>
+              <div className="space-y-3 max-w-3xl">
+                {testimonials.map(t => (
+                  <div key={t.id} className="bg-white border border-surface-dim p-5 group hover:border-primary transition-colors">
+                    <div className="flex justify-between items-start gap-4">
+                      <div>
+                        <h4 className="font-display font-bold text-lg">{t.name}</h4>
+                        <p className="text-xs font-bold text-primary">{t.role}</p>
+                        <p className="text-xs text-on-surface-variant mt-2 line-clamp-2">{t.text}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => setModal({ open: true, title: 'EDIT REVIEW', content: <TestimonialForm initial={t} onSave={(d: any) => save('testimonials', { ...d, id: t.id })} /> })}
+                          className="text-on-surface-variant hover:text-primary transition-colors"><Edit3 size={16} /></button>
+                        <button onClick={() => t.id && del('testimonials', t.id)}
+                          className="text-on-surface-variant hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {tab === 'experience' && (
             <div>
               <div className="flex justify-between items-center mb-8">
