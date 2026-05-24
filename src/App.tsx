@@ -97,6 +97,14 @@ const STATS = [
   { label: 'RATING', value: '4.8' },
 ];
 
+const preloadImages = (urls: Array<string | undefined>) => {
+  urls.filter(Boolean).forEach(url => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url as string;
+  });
+};
+
 const DEFAULT_TESTIMONIALS: Testimonial[] = [
   { name: 'EMILY CARTER', role: 'PRODUCT MANAGER · TECHNOVA', text: 'Gulfam transformed our app with exceptional Flutter skills. The user feedback has been phenomenal and engagement rose 40% in the first month.' },
   { name: 'SOPHIA LEE', role: 'MARKETING LEAD · GREENSPACES', text: 'Attention to detail and user-centric approach resulted in a beautiful platform that our customers absolutely love.' },
@@ -246,7 +254,7 @@ const Home = () => {
   const [skills, setSkills] = useState<Skill[]>(DEFAULT_SKILLS);
   const [services, setServices] = useState<Service[]>(DEFAULT_SERVICES);
   const [testimonials, setTestimonials] = useState<Testimonial[]>(DEFAULT_TESTIMONIALS);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [activeService, setActiveService] = useState(0);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -255,13 +263,22 @@ const Home = () => {
   const imgY = useTransform(scrollYProgress, [0, 1], [0, 80]);
 
   useEffect(() => {
+    preloadImages(['/profile.png', profile.profileImageUrl, ...projects.slice(0, 4).map(p => p.imageUrl)]);
+
     getDoc(doc(db, 'profile', 'current')).then(snap => {
-      if (snap.exists()) setProfile(snap.data() as Profile);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+      if (snap.exists()) {
+        const nextProfile = snap.data() as Profile;
+        preloadImages([nextProfile.profileImageUrl]);
+        setProfile(nextProfile);
+      }
+    }).catch(() => undefined);
 
     const unsubP = onSnapshot(query(collection(db, 'projects'), orderBy('order')), s => {
-      if (!s.empty) setProjects(s.docs.map(d => ({ id: d.id, ...d.data() } as Project)));
+      if (!s.empty) {
+        const nextProjects = s.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+        preloadImages(nextProjects.slice(0, 6).map(p => p.imageUrl));
+        setProjects(nextProjects);
+      }
     });
     const unsubE = onSnapshot(query(collection(db, 'experience'), orderBy('order')), s => {
       if (!s.empty) setExperience(s.docs.map(d => ({ id: d.id, ...d.data() } as Experience)));
@@ -359,14 +376,28 @@ const Home = () => {
 
             <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, delay: 0.25 }}
               className="lg:col-span-4">
-              <div className="float-panel relative border border-white/12 bg-[#101010]/82 backdrop-blur p-4 md:p-5">
-                <div className="absolute -top-4 -left-4 bg-accent text-primary px-4 py-2 text-[10px] font-bold tracking-[0.16em] uppercase z-20">AI + Full Stack</div>
-                <div className="absolute -right-3 top-16 border border-white/12 bg-primary/90 px-4 py-2 text-white/70 text-[10px] font-bold tracking-[0.16em] uppercase z-20">Available</div>
-                <div className="aspect-[4/5] bg-[radial-gradient(circle_at_50%_20%,rgba(183,255,42,0.18),transparent_34%),linear-gradient(180deg,#171717,#060606)] border border-white/10 overflow-hidden relative">
-                  <motion.img style={{ y: imgY }} src={profile.profileImageUrl || '/profile.png'} alt={profile.name}
-                    className="w-full h-full object-contain object-bottom scale-105 saturate-125 contrast-105 opacity-100 drop-shadow-[0_28px_55px_rgba(0,0,0,0.65)]"
-                    onError={e => { (e.target as HTMLImageElement).src = '/profile.png'; }} />
-                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
+              <div className="float-panel relative">
+                <div className="absolute -inset-5 bg-[conic-gradient(from_140deg_at_50%_50%,rgba(183,255,42,0.34),transparent_24%,rgba(255,255,255,0.12),transparent_58%,rgba(183,255,42,0.28))] blur-2xl opacity-70" />
+                <div className="absolute -top-4 left-5 bg-accent text-primary px-4 py-2 text-[10px] font-bold tracking-[0.16em] uppercase z-20">AI + Full Stack</div>
+                <div className="absolute -right-2 top-20 border border-white/12 bg-primary/90 px-4 py-2 text-white/70 text-[10px] font-bold tracking-[0.16em] uppercase z-20">Available</div>
+                <div className="relative border border-white/12 bg-[#101010]/82 backdrop-blur p-3 md:p-4 overflow-hidden">
+                  <div className="absolute inset-3 border border-accent/30 translate-x-3 translate-y-3" />
+                  <div className="absolute left-0 top-1/2 h-24 w-1 -translate-y-1/2 bg-accent" />
+                  <div className="aspect-[4/5] bg-[radial-gradient(circle_at_50%_8%,rgba(183,255,42,0.24),transparent_30%),linear-gradient(145deg,#202020_0%,#0d0d0d_46%,#050505_100%)] border border-white/10 overflow-hidden relative">
+                    <div className="absolute inset-x-8 top-8 h-32 rounded-full bg-accent/20 blur-3xl" />
+                    <div className="absolute inset-0 opacity-[0.16] bg-[linear-gradient(135deg,transparent_0_47%,rgba(255,255,255,0.5)_48%,transparent_49%_100%)] bg-[length:18px_18px]" />
+                    <motion.img style={{ y: imgY }} src={profile.profileImageUrl || '/profile.png'} alt={profile.name}
+                      loading="eager"
+                      decoding="sync"
+                      fetchPriority="high"
+                      className="relative z-10 w-full h-full object-contain object-bottom scale-110 saturate-125 contrast-110 drop-shadow-[0_34px_65px_rgba(0,0,0,0.78)]"
+                      onError={e => { (e.target as HTMLImageElement).src = '/profile.png'; }} />
+                    <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-primary via-primary/72 to-transparent z-20" />
+                    <div className="absolute bottom-5 left-5 right-5 z-30 flex items-center justify-between border-t border-white/12 pt-4">
+                      <span className="text-white/50 text-[10px] font-bold tracking-[0.18em] uppercase">Portfolio</span>
+                      <span className="text-accent text-[10px] font-bold tracking-[0.18em] uppercase">2026</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-px bg-white/10 mt-5">
                   {STATS.slice(0, 3).map(s => (
@@ -434,33 +465,33 @@ const Home = () => {
                   scale: activeService === i ? 1.025 : 1,
                   rotate: activeService === i ? -0.4 : 0,
                 }}
-                whileHover={{ y: -18, rotate: -0.8 }}
+                whileHover={{ y: -12, rotate: -0.35 }}
                 transition={{ type: "spring", stiffness: 220, damping: 24, delay: i * 0.04 }}
                 viewport={{ once: true }}
                 className={cn(
-                  "relative overflow-hidden bg-white/78 backdrop-blur border p-7 md:p-9 group cursor-default min-h-[360px] transition-colors duration-300",
-                  activeService === i ? "border-accent bg-[#070707] text-accent shadow-[0_28px_80px_rgba(6,6,6,0.28)]" : "border-primary/10 bg-white/78 text-on-surface hover:border-primary/30"
+                  "relative overflow-hidden bg-white/90 backdrop-blur border p-7 md:p-9 group cursor-default min-h-[360px] transition-colors duration-300",
+                  activeService === i ? "border-accent bg-white text-on-surface shadow-[0_26px_70px_rgba(6,6,6,0.14)]" : "border-primary/10 bg-white/78 text-on-surface hover:border-primary/30 hover:bg-white"
                 )}>
                 <motion.div className="absolute inset-x-0 top-0 h-1 bg-accent origin-left"
                   animate={{ scaleX: activeService === i ? 1 : 0.18 }}
                   transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} />
-                <motion.div className="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-accent/18 blur-2xl"
-                  animate={{ scale: activeService === i ? 1.2 : 0.65, x: activeService === i ? 0 : 20, y: activeService === i ? 0 : -10 }}
+                <motion.div className="absolute -right-16 -top-16 w-44 h-44 rounded-full bg-accent/12 blur-2xl"
+                  animate={{ scale: activeService === i ? 1 : 0.55, x: activeService === i ? 0 : 20, y: activeService === i ? 0 : -10 }}
                   transition={{ duration: 0.6 }} />
                 <div className="flex justify-between items-start mb-8">
-                  <span className={cn("font-display font-bold text-5xl transition-colors", activeService === i ? "text-accent/25" : "text-primary/18")}>{s.num}</span>
+                  <span className={cn("font-display font-bold text-5xl transition-colors", activeService === i ? "text-primary/18" : "text-primary/18")}>{s.num}</span>
                   <motion.div animate={{ rotate: activeService === i ? [0, -10, 0] : 0, scale: activeService === i ? 1.08 : 1 }}
                     transition={{ duration: 0.6 }}
-                    className={cn("w-12 h-12 border flex items-center justify-center transition-colors", activeService === i ? "border-accent/35 bg-accent/10 text-accent" : "border-primary/10 text-primary")}>{getServiceIcon(s.icon)}</motion.div>
+                    className={cn("w-12 h-12 border flex items-center justify-center transition-colors", activeService === i ? "border-accent/45 bg-accent/10 text-primary" : "border-primary/10 text-primary")}>{getServiceIcon(s.icon)}</motion.div>
                 </div>
-                <h3 className={cn("font-display font-bold text-2xl mb-4 tracking-tight transition-colors", activeService === i ? "text-accent" : "text-on-surface")}>{s.title}</h3>
-                <p className={cn("text-sm leading-relaxed transition-colors", activeService === i ? "text-white/68" : "text-on-surface-variant")}>{s.desc}</p>
+                <h3 className="font-display font-bold text-2xl mb-4 tracking-tight text-on-surface transition-colors">{s.title}</h3>
+                <p className="text-sm leading-relaxed text-on-surface-variant transition-colors">{s.desc}</p>
                 <div className="flex flex-wrap gap-2 mt-7">
                   {(Array.isArray(s.tags) ? s.tags : []).map(tag => (
-                    <span key={tag} className={cn("border px-3 py-1 text-[10px] font-bold tracking-[0.12em] uppercase transition-colors", activeService === i ? "border-accent/25 bg-accent/5 text-accent/80" : "border-primary/10 text-on-surface-variant")}>{tag}</span>
+                    <span key={tag} className={cn("border px-3 py-1 text-[10px] font-bold tracking-[0.12em] uppercase transition-colors", activeService === i ? "border-accent/35 bg-accent/10 text-primary" : "border-primary/10 text-on-surface-variant")}>{tag}</span>
                   ))}
                 </div>
-                <div className={cn("mt-8 flex items-center gap-2 text-xs font-bold tracking-[0.14em] transition-colors", activeService === i ? "text-accent" : "text-primary")}>
+                <div className="mt-8 flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-primary transition-colors">
                   EXPLORE <ChevronRight size={14} />
                 </div>
               </motion.div>
@@ -486,6 +517,9 @@ const Home = () => {
                 <div className="relative h-64 md:h-80 overflow-hidden bg-white/[0.035]">
                   {p.imageUrl ? (
                     <img src={p.imageUrl} alt={p.title}
+                      loading={i < 4 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      fetchPriority={i < 2 ? 'high' : 'auto'}
                       className="w-full h-full object-contain group-hover:scale-[1.03] transition-all duration-700 opacity-100" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center site-grid">
@@ -534,6 +568,8 @@ const Home = () => {
                 <div className="bg-primary p-5">
                   {selectedProject.imageUrl ? (
                     <img src={selectedProject.imageUrl} alt={selectedProject.title}
+                      loading="eager"
+                      decoding="async"
                       className="w-full max-h-[70vh] object-contain bg-white/[0.03]" />
                   ) : (
                     <div className="h-80 site-grid border border-white/10 flex items-center justify-center">
@@ -726,10 +762,10 @@ const FieldInput = ({ label, value, onChange, type = 'text' }: any) => (
     <label className="text-[10px] font-bold tracking-[0.2em] uppercase block mb-2 text-on-surface-variant">{label}</label>
     {type === 'textarea' ? (
       <textarea value={value} onChange={e => onChange(e.target.value)} rows={3}
-        className="w-full bg-surface border border-surface-dim px-4 py-3 text-sm outline-none focus:border-primary resize-none font-medium" />
+        className="w-full bg-surface border border-surface-dim px-4 py-3 text-sm text-on-surface outline-none focus:border-primary resize-none font-medium" />
     ) : (
       <input type={type} value={value} onChange={e => onChange(e.target.value)}
-        className="w-full bg-surface border border-surface-dim px-4 py-3 text-sm outline-none focus:border-primary font-medium" />
+        className="w-full bg-surface border border-surface-dim px-4 py-3 text-sm text-on-surface outline-none focus:border-primary font-medium" />
     )}
   </div>
 );
@@ -740,7 +776,7 @@ const Modal = ({ open, onClose, title, children }: any) => {
     <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto admin-scroll">
+        className="bg-white text-on-surface w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto admin-scroll">
         <div className="flex justify-between items-center p-6 border-b border-surface-dim sticky top-0 bg-white z-10">
           <h3 className="font-display font-bold text-xl tracking-tight">{title}</h3>
           <button onClick={onClose} className="p-2 hover:bg-surface rounded-lg transition-colors"><X size={18} /></button>
@@ -827,7 +863,7 @@ const Admin = () => {
 
   if (!user) return (
     <div className="min-h-screen bg-primary flex items-center justify-center p-8">
-      <div className="bg-surface w-full max-w-sm p-10 text-center">
+      <div className="bg-surface text-on-surface w-full max-w-sm p-10 text-center">
         <div className="w-14 h-14 bg-accent flex items-center justify-center mx-auto mb-6">
           <User size={24} className="text-primary" />
         </div>
@@ -844,10 +880,10 @@ const Admin = () => {
   );
 
   if (!isAdmin) return (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
+    <div className="min-h-screen bg-surface text-on-surface flex items-center justify-center">
       <div className="text-center p-8">
         <div className="text-6xl mb-4">🚫</div>
-        <h1 className="font-display font-bold text-3xl text-accent2 mb-2">ACCESS DENIED</h1>
+        <h1 className="font-display font-bold text-3xl text-primary mb-2">ACCESS DENIED</h1>
         <p className="text-on-surface-variant text-sm mb-6">Logged in as: <strong>{user.email}</strong></p>
         <button onClick={() => logout()} className="bg-primary text-white font-bold px-6 py-3 text-sm mr-4 hover:bg-accent hover:text-primary transition-all">LOGOUT</button>
         <Link to="/" className="text-primary font-bold text-sm underline">Go Home</Link>
@@ -972,7 +1008,7 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex">
+    <div className="min-h-screen bg-surface text-on-surface flex">
       {/* Sidebar */}
       <aside className="w-64 bg-primary text-white flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
         <div className="p-8 border-b border-white/10">
@@ -1015,7 +1051,7 @@ const Admin = () => {
           {/* ── INBOX ── */}
           {tab === 'inquiries' && (
             <div>
-              <h1 className="font-display font-bold text-4xl tracking-tight mb-8">INBOX <span className="text-accent">{inquiries.length}</span></h1>
+              <h1 className="font-display font-bold text-4xl tracking-tight mb-8">INBOX <span className="text-primary">{inquiries.length}</span></h1>
               {inquiries.length === 0 && <p className="text-on-surface-variant text-sm">No messages yet.</p>}
               <div className="space-y-4 max-w-3xl">
                 {inquiries.map(inq => (
