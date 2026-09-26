@@ -1,11 +1,12 @@
 // User-confirmed identity shared by the visible portfolio and build-time SEO.
 export const identity = {
   name: 'Gulfam Ali',
-  role: 'Full Stack Developer',
+  role: 'Founder of Trenoxa Labs',
   url: 'https://www.gulfamali.me/',
-  title: 'Gulfam Ali | Full Stack Developer & Founder of Trenoxa Labs',
-  description: 'Gulfam Ali, Full Stack Developer, Founder of Trenoxa Labs and CTO of MatchMesh. Explore web, mobile, and AI automation projects and connect for collaboration.',
-  introduction: 'I am Gulfam Ali, a Full Stack Developer and AI Automation Engineer in Vehari, Pakistan, Founder of Trenoxa Labs and CTO of MatchMesh. I build web and mobile applications, automation tools, AI assistants, and voice agents.',
+  title: 'Gulfam Ali | Founder of Trenoxa Labs & CTO of MatchMesh',
+  description: 'Gulfam Ali, Founder of Trenoxa Labs and CTO of MatchMesh. Turning business ideas into digital products and simplifying operations through software and AI.',
+  headline: ['Your Next Big Idea.', 'Built for Business.'],
+  introduction: 'I\'m Gulfam Ali, Founder of Trenoxa Labs and CTO of MatchMesh. I turn business ideas into digital products and help teams simplify operations through software and AI\u2014from shaping the vision to bringing it to life. My team works closely with you, with collaboration and support aligned to your time zone.',
   github: 'https://github.com/gulfamali16',
   linkedin: 'https://www.linkedin.com/in/gulfam-a1i/',
   organizations: [

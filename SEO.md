@@ -1,11 +1,11 @@
 # SEO implementation and launch checklist
 
 ## Implemented
-- Name and role in the visible homepage H1 and opening paragraph.
+- Business-focused homepage H1, with Gulfam Ali displayed above it and founder/CTO roles in the opening paragraph.
 - Shared public identity in src/identity.ts, used by the React hero and build-time HTML metadata.
 - Canonical www HTTPS URL, descriptive title and description, Open Graph and Twitter previews.
 - Person, WebSite and ProfilePage JSON-LD; GitHub and the user-confirmed LinkedIn URL are included in sameAs. Organization entities link Trenoxa Labs to its founder and both companies to the person.
-- Initial HTML includes a readable public introduction, skills, GitHub and contact link. React replaces this summary with the full interactive portfolio. This is not full-page prerendering; projects still load through JavaScript/Firestore.
+- Initial HTML includes metadata and JSON-LD, plus a styled startup indicator that React replaces. A noscript fallback provides the introduction, company links, skills and contact information when JavaScript is disabled. The full portfolio requires JavaScript rendering; this is not full-page prerendering. This avoids flashing the plain summary before the app mounts.
 - robots.txt and a sitemap containing only the canonical homepage (section anchors are not separate pages).
 - Existing missing favicon fixed; portrait reused for social cards.
 - Separate built admin HTML with noindex, Vercel admin indexing headers, and a real static 404 page. No wildcard SPA rewrite, so unknown production URLs retain 404 status.

@@ -349,18 +349,13 @@ const Home = () => {
                   <span className="text-white/62 text-[10px] font-bold tracking-[0.22em] uppercase">Available for new projects</span>
                 </div>
               </motion.div>
+              <p className="font-display text-accent text-sm md:text-base font-bold tracking-[0.16em] uppercase mb-5">{identity.name}</p>
               <motion.h1 initial={{ opacity: 0, y: 34 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display font-bold text-white leading-[0.84] max-w-6xl tracking-normal"
-                style={{ fontSize: 'clamp(58px, 10.6vw, 158px)' }}>
-                <span className="block text-[clamp(24px,4vw,48px)] leading-tight mb-5">{identity.name} &mdash;</span>
-                Full Stack<br /><span className="text-accent">Developer</span>
+                className="font-display font-bold text-white leading-[1.04] max-w-6xl tracking-tight"
+                style={{ fontSize: 'clamp(36px, 5.3vw, 76px)' }}>
+                <span className="block">{identity.headline[0]}</span>
+                <span className="block text-accent">{identity.headline[1]}</span>
               </motion.h1>
-              <motion.h2 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.15 }}
-                className="font-display font-bold uppercase text-transparent leading-[0.88] mt-7 select-none"
-                style={{ fontSize: 'clamp(38px, 6.6vw, 96px)', WebkitTextStroke: '1px rgba(255,255,255,0.18)' }}>
-                <span className="block whitespace-nowrap">AI Automation</span>
-                <span className="block">Engineer</span>
-              </motion.h2>
               <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
                 className="mt-8 max-w-2xl border-l-2 border-accent pl-6 text-white/66 text-base md:text-lg leading-relaxed">
                 {identity.introduction}
@@ -392,7 +387,7 @@ const Home = () => {
               className="lg:col-span-4">
               <div className="float-panel relative">
                 <div className="absolute -inset-5 bg-[conic-gradient(from_140deg_at_50%_50%,rgba(183,255,42,0.34),transparent_24%,rgba(255,255,255,0.12),transparent_58%,rgba(183,255,42,0.28))] blur-2xl opacity-70" />
-                <div className="absolute -top-4 left-5 bg-accent text-primary px-4 py-2 text-[10px] font-bold tracking-[0.16em] uppercase z-20">AI + Full Stack</div>
+                <div className="absolute -top-4 left-5 bg-accent text-primary px-4 py-2 text-[10px] font-bold tracking-[0.16em] uppercase z-20">Digital Products + AI</div>
                 <div className="absolute -right-2 top-20 border border-white/12 bg-primary/90 px-4 py-2 text-white/70 text-[10px] font-bold tracking-[0.16em] uppercase z-20">Available</div>
                 <div className="relative border border-white/12 bg-[#101010]/82 backdrop-blur p-3 md:p-4 overflow-hidden">
                   <div className="absolute inset-3 border border-accent/30 translate-x-3 translate-y-3" />

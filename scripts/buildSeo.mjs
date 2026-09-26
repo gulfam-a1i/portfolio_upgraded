@@ -6,6 +6,6 @@ const admin = home
   .replace(/<meta (?:name="(?:description|twitter:[^"]+)"|property="og:[^"]+")[^>]*>/g, '')
   .replace(/<link rel="canonical"[^>]*>/, '')
   .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, '')
-  .replace(/<div id="root">[\s\S]*?<\/main><\/div>/, '<div id="root"><p>Admin sign-in requires JavaScript.</p></div>');
+  .replace(/<noscript>[\s\S]*?<\/noscript>/, '<noscript><style>.startup { display: none; }</style><p>Admin sign-in requires JavaScript.</p></noscript>');
 await mkdir(new URL('../dist/admin/', import.meta.url), { recursive: true });
 await writeFile(new URL('../dist/admin/index.html', import.meta.url), admin);

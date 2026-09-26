@@ -7,10 +7,17 @@
     <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin />
     <link rel="preconnect" href="https://github.com" crossorigin />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      html, body { margin: 0; background: #060606; color: #fff; }
+      .startup { min-height: 100svh; display: grid; place-content: center; gap: 16px; text-align: center; font-family: system-ui, sans-serif; }
+      .startup-mark { width: 56px; height: 56px; margin: auto; display: grid; place-items: center; background: #b7ff2a; color: #060606; font-size: 22px; font-weight: 800; }
+      .startup p { margin: 0; color: #aaa; font-size: 14px; }
+    </style>
     <!--seo-head-->
   </head>
   <body>
-    <div id="root"><!--seo-content--></div>
+    <div id="root"><!--startup-start--><div class="startup" role="status" aria-label="Loading portfolio"><div class="startup-mark" aria-hidden="true">GA</div><p>Loading portfolio...</p></div><!--startup-end--></div>
+    <noscript><style>.startup { display: none; }</style><!--seo-content--></noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
