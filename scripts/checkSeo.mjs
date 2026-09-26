@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const read = p => readFile(new URL('../dist/' + p, import.meta.url), 'utf8');
+const home = await read('index.html');
+assert.match(home, /<h1>Gulfam Ali/);
+assert.equal((home.match(/<title>/g) || []).length, 1);
+assert.match(home, /rel="canonical" href="https:\/\/www.gulfamali.me\/"/);
+assert.match(home, /name="robots" content="index,follow/);
+assert.ok(!home.includes('<!--seo-'));
+const graph = JSON.parse(home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
+const person = graph.find(item => item['@type'] === 'Person');
+assert.equal(person.name, 'Gulfam Ali');
+assert.deepEqual(person.sameAs, ['https://github.com/gulfamali16', 'https://www.linkedin.com/in/gulfam-a1i/']);
+assert.ok(person.jobTitle.includes('CTO of MatchMesh'));
+const organizations = graph.filter(item => item['@type'] === 'Organization');
+assert.equal(organizations.length, 2);
+assert.equal(organizations.find(item => item.name === 'Trenoxa Labs').founder['@id'], person['@id']);
+assert.equal(person.worksFor.length, 2);
+for (const org of organizations) {
+  assert.ok(person.worksFor.some(ref => ref['@id'] === org['@id']));
+  const logo = await readFile(new URL('../dist' + new URL(org.logo).pathname, import.meta.url));
+  assert.ok(logo.length > 100);
+}
+assert.match(home, /Founder of Trenoxa Labs and CTO of MatchMesh/);
+assert.ok(!home.includes('linkedin.com/in/gulfamali'));
+assert.equal(graph.find(item => item['@type'] === 'ProfilePage').mainEntity['@id'], person['@id']);
+const admin = await read('admin/index.html');
+assert.match(admin, /name="robots" content="noindex,nofollow"/);
+assert.ok(!/rel="canonical"|application\/ld\+json|property="og:|<h1>Gulfam Ali/.test(admin));
+assert.match(admin, /assets\/.*?\.js/);
+assert.match(await read('robots.txt'), /Sitemap: https:\/\/www.gulfamali.me\/sitemap.xml/);
+assert.equal(((await read('sitemap.xml')).match(/<loc>/g) || []).length, 1);
+assert.match(await read('404.html'), /noindex/);
+assert.match(await read('favicon.svg'), /<svg/);
+console.log('SEO checks passed: homepage identity, JSON-LD, canonical, sitemap, robots, favicon, admin isolation and 404.');

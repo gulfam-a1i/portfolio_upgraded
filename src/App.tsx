@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { identity } from './identity';
+import { useState, useEffect, useRef, type ReactElement } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import {
   Menu, X, ArrowUpRight, Github, Linkedin, Send, Mail, Phone, MapPin,
@@ -49,7 +50,7 @@ export interface Testimonial {
 const DEFAULT_PROFILE: Profile = {
   name: "GULFAM ALI", objective: "Software Engineering student at COMSATS University with hands-on experience in Flutter, Full Stack Development, React.js, Node.js, REST APIs, and AI-powered applications.",
   email: "gulfamoffi62@gmail.com", phone: "+92 3280130155", location: "Vehari, Pakistan",
-  linkedin: "https://linkedin.com/in/gulfamali", github: "https://github.com/gulfamali16",
+  linkedin: identity.linkedin, github: "https://github.com/gulfamali16",
   facebook: "#", instagram: "#",
   fiverr: "https://www.fiverr.com/gulfama1i?public_mode=true",
   upwork: "https://www.upwork.com/freelancers/~01d6f91061b549d072",
@@ -114,7 +115,7 @@ const DEFAULT_TESTIMONIALS: Testimonial[] = [
 // ─── Navbar ────────────────────────────────────────────────────────
 const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
-const serviceIcons: Record<string, JSX.Element> = {
+const serviceIcons: Record<string, ReactElement> = {
   layout: <Layout size={28} />,
   server: <Server size={28} />,
   smartphone: <Smartphone size={28} />,
@@ -158,9 +159,9 @@ const Navbar = ({ profile, activeSection }: { profile: Profile; activeSection: s
   return (
     <nav className={cn("fixed top-0 w-full z-50 transition-all duration-500 border-b", scrolled ? "bg-primary/85 backdrop-blur-xl border-white/10 py-3" : "bg-primary/35 backdrop-blur-sm border-transparent py-5")}>
       <div className="max-w-[1440px] mx-auto px-5 md:px-10 xl:px-20 flex justify-between items-center">
-        <Link to="/" className="font-display text-white text-lg md:text-xl font-bold tracking-tight lowercase">
+        <a href="/" className="font-display text-white text-lg md:text-xl font-bold tracking-tight lowercase">
           {profile.name.toLowerCase().replace(' ', '')}<span className="text-accent">.dev</span>
-        </Link>
+        </a>
         <div className="hidden md:flex gap-1 items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
           {links.map((item, i) => (
             <a key={item.label} href={item.href}
@@ -168,9 +169,9 @@ const Navbar = ({ profile, activeSection }: { profile: Profile; activeSection: s
               {item.label}
             </a>
           ))}
-          <Link to="/admin" className="px-4 py-2 rounded-full text-white/42 text-[10px] font-bold tracking-[0.16em] hover:text-accent hover:bg-white/[0.06] transition-all flex items-center gap-1">
+          <a href="/admin" className="px-4 py-2 rounded-full text-white/42 text-[10px] font-bold tracking-[0.16em] hover:text-accent hover:bg-white/[0.06] transition-all flex items-center gap-1">
             <User size={11} /> ADMIN
-          </Link>
+          </a>
         </div>
         <a href="#contact" className="hidden md:flex items-center gap-2 bg-accent text-primary font-bold text-[11px] px-5 py-3 tracking-[0.12em] hover:bg-accent2 transition-all group">
           HIRE ME <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -190,7 +191,7 @@ const Navbar = ({ profile, activeSection }: { profile: Profile; activeSection: s
                   {item.label}
                 </a>
               ))}
-              <Link to="/admin" onClick={() => setOpen(false)} className="text-white/40 font-bold text-base">ADMIN</Link>
+              <a href="/admin" onClick={() => setOpen(false)} className="text-white/40 font-bold text-base">ADMIN</a>
             </div>
           </motion.div>
         )}
@@ -267,7 +268,7 @@ const Home = () => {
 
     getDoc(doc(db, 'profile', 'current')).then(snap => {
       if (snap.exists()) {
-        const nextProfile = snap.data() as Profile;
+        const nextProfile = { ...snap.data(), linkedin: identity.linkedin } as Profile;
         preloadImages([nextProfile.profileImageUrl]);
         setProfile(nextProfile);
       }
@@ -351,6 +352,7 @@ const Home = () => {
               <motion.h1 initial={{ opacity: 0, y: 34 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
                 className="font-display font-bold text-white leading-[0.84] max-w-6xl tracking-normal"
                 style={{ fontSize: 'clamp(58px, 10.6vw, 158px)' }}>
+                <span className="block text-[clamp(24px,4vw,48px)] leading-tight mb-5">{identity.name} &mdash;</span>
                 Full Stack<br /><span className="text-accent">Developer</span>
               </motion.h1>
               <motion.h2 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.15 }}
@@ -361,8 +363,20 @@ const Home = () => {
               </motion.h2>
               <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
                 className="mt-8 max-w-2xl border-l-2 border-accent pl-6 text-white/66 text-base md:text-lg leading-relaxed">
-                Full stack developer building scalable web, mobile, and AI-powered systems including automation tools, AI assistants, and voice/call agents.
+                {identity.introduction}
               </motion.p>
+              <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl" aria-label="Leadership roles">
+                {identity.organizations.map(organization => (
+                  <a key={organization.id} href={organization.url} target="_blank" rel="noopener noreferrer"
+                    className="group rounded-xl border border-white/15 bg-white/[0.03] p-4 hover:border-accent/60 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
+                    <div className={cn("h-20 rounded-md mb-3 flex items-center justify-center overflow-hidden", organization.imageClass)}>
+                      <img src={organization.logo} alt={organization.name + ' logo'} width={220} height={80} className="w-full h-full object-contain p-2" decoding="async" />
+                    </div>
+                    <span className="block text-accent text-[10px] uppercase tracking-wider font-bold">{organization.role}</span>
+                    <span className="mt-1 flex items-center justify-between text-sm font-bold text-white">{organization.name}<ArrowUpRight size={15} aria-hidden="true" /></span>
+                  </a>
+                ))}
+              </div>
               <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }}
                 className="mt-10 flex flex-wrap gap-4">
                 <a href="#works" className="bg-accent text-primary font-display font-bold text-xs tracking-[0.14em] px-7 py-4 hover:bg-accent2 transition-all flex items-center gap-2 group">
@@ -416,8 +430,8 @@ const Home = () => {
                   { icon: <Instagram size={15} />, href: profile.instagram },
                   { icon: <span className="text-[10px] font-bold">Fi</span>, href: profile.fiverr || DEFAULT_PROFILE.fiverr },
                   { icon: <span className="text-[10px] font-bold">Up</span>, href: profile.upwork || DEFAULT_PROFILE.upwork },
-                ].map((s, i) => (
-                  <a key={i} href={s.href} target="_blank" rel="noopener noreferrer"
+                ].filter(s => s.href && /^https:\/\//.test(s.href)).map((s, i) => (
+                  <a key={i} href={s.href} aria-label={`Visit ${new URL(s.href!).hostname} profile`} target="_blank" rel="noopener noreferrer"
                     className="w-11 h-11 border border-white/12 bg-white/[0.025] flex items-center justify-center text-accent/75 hover:bg-accent hover:text-primary hover:border-accent transition-all">
                     {s.icon}
                   </a>
@@ -747,8 +761,8 @@ const Home = () => {
               { icon: <Instagram size={14} />, href: profile.instagram },
               { icon: <span className="text-[10px] font-bold">Fi</span>, href: profile.fiverr || DEFAULT_PROFILE.fiverr },
               { icon: <span className="text-[10px] font-bold">Up</span>, href: profile.upwork || DEFAULT_PROFILE.upwork },
-            ].map((s, i) => (
-              <a key={i} href={s.href} target="_blank" rel="noopener noreferrer"
+            ].filter(s => s.href && /^https:\/\//.test(s.href)).map((s, i) => (
+              <a key={i} href={s.href} aria-label={`Visit ${new URL(s.href!).hostname} profile`} target="_blank" rel="noopener noreferrer"
                 className="w-8 h-8 flex items-center justify-center text-accent/75 hover:text-accent2 transition-colors">{s.icon}</a>
             ))}
           </div>
@@ -815,7 +829,7 @@ const Admin = () => {
 
   useEffect(() => {
     if (!isAdmin) return;
-    getDoc(doc(db, 'profile', 'current')).then(s => { if (s.exists()) setProfileData(s.data() as Profile); });
+    getDoc(doc(db, 'profile', 'current')).then(s => { if (s.exists()) setProfileData({ ...s.data(), linkedin: identity.linkedin } as Profile); });
     const u1 = onSnapshot(query(collection(db, 'inquiries'), orderBy('createdAt', 'desc')), s =>
       setInquiries(s.docs.map(d => ({ id: d.id, ...d.data() } as Inquiry))));
     const u2 = onSnapshot(query(collection(db, 'projects'), orderBy('order')), s =>
@@ -874,7 +888,7 @@ const Admin = () => {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
           SIGN IN WITH GOOGLE
         </button>
-        <Link to="/" className="mt-6 inline-block text-xs font-bold text-primary underline">← BACK TO SITE</Link>
+        <a href="/" className="mt-6 inline-block text-xs font-bold text-primary underline">← BACK TO SITE</a>
       </div>
     </div>
   );
@@ -886,7 +900,7 @@ const Admin = () => {
         <h1 className="font-display font-bold text-3xl text-primary mb-2">ACCESS DENIED</h1>
         <p className="text-on-surface-variant text-sm mb-6">Logged in as: <strong>{user.email}</strong></p>
         <button onClick={() => logout()} className="bg-primary text-white font-bold px-6 py-3 text-sm mr-4 hover:bg-accent hover:text-primary transition-all">LOGOUT</button>
-        <Link to="/" className="text-primary font-bold text-sm underline">Go Home</Link>
+        <a href="/" className="text-primary font-bold text-sm underline">Go Home</a>
       </div>
     </div>
   );
@@ -1012,9 +1026,9 @@ const Admin = () => {
       {/* Sidebar */}
       <aside className="w-64 bg-primary text-white flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
         <div className="p-8 border-b border-white/10">
-          <Link to="/" className="font-display font-bold text-xl lowercase">
+          <a href="/" className="font-display font-bold text-xl lowercase">
             gulfamali<span className="text-accent">.dev</span>
-          </Link>
+          </a>
           <div className="text-white/40 text-xs mt-1 font-bold tracking-[0.1em]">ADMIN PANEL</div>
         </div>
         <nav className="flex flex-col p-6 gap-1 flex-1">

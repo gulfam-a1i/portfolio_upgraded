@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "gulfamali.me" }],
+      "destination": "https://www.gulfamali.me/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [{ "source": "/admin", "destination": "/admin/index.html" }],
+  "headers": [
+    { "source": "/admin/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/404.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }] }
+  ]
+}

@@ -16,7 +16,7 @@ const profile = {
   email: 'gulfamoffi62@gmail.com',
   phone: '+92 3280130155',
   location: 'Vehari, Pakistan',
-  linkedin: 'https://linkedin.com/in/gulfamali',
+  linkedin: 'https://www.linkedin.com/in/gulfam-a1i/',
   github: 'https://github.com/gulfamali16',
   facebook: '#',
   instagram: '#',
